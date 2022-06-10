@@ -1,33 +1,44 @@
 package tpAcsi;
 
+import java.awt.EventQueue;
 import java.sql.*;
+
+import databaseManager.DBManager;
+import ui.LoginFrame;
+import models.*;
 
 public class Program {
 	
 	public static void main(String[] args) throws Exception {
-
+	
+		var medicaments = DBManager.GetMedicaments();
+		medicaments.forEach(medicament->{
+			System.out.println("id: "+ medicament.idMedicament);
+			System.out.println("nom: "+ medicament.nom);
+			System.out.println("date fabrication    "+ medicament.dateFabrication);
+			System.out.println("date expiration"+ medicament.dateExpiration);
+			System.out.println("constituant"+ medicament.constituant);
+			System.out.println("comment prendre          "+ medicament.commentPrendre);
+			System.out.println("le prix est       "+ medicament.prix);
+			
+		});
+System.out.println("none");
 		
-	String driver = "com.mysql.cj.jdbc.Driver";
-	String url = "jdbc:mysql://localhost:3306/tpAcsi";
-	
-	Class.forName(driver);
-	Connection connection = DriverManager.getConnection(url,"root","12345");
-
-	String query = "select * from commands";
-	var statement = connection.createStatement();
-	
-	var result = statement.executeQuery(query);
-	
-	while(result.next()) {
-		var id = result.getInt("id");
-		var nom = result.getString("nom");
-		System.out.println("id: " + id);
-		System.out.println("nom: " + nom);
-	}
-	
-	
-
-	
+		
+		
+		var a  = true;
+		if (a)return;
+			
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					LoginFrame frame = new LoginFrame();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	
 	}
 
