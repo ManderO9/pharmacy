@@ -3,8 +3,6 @@ package databaseManager;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
-import java.util.Date;
-
 import models.*;
 
 public class DBManager {
@@ -97,6 +95,64 @@ public class DBManager {
 
 		// If we got here there was a problem, return an empty list
 		return new ArrayList<User>();
+	}
+
+	// Gets the user with the specific email
+	public static User GetUserByEmail(String email) {
+		try {
+			// Create connection
+			Class.forName(Driver);
+			Connection connection = DriverManager.getConnection(Url, Username, DBPassword);
+
+			// Create the query
+			var query = "select * from " + UsersTableName + " where email='" + email + "'";
+
+			// Create the statement
+			var statement = connection.createStatement();
+
+			// Execute the query and get the result
+			var result = statement.executeQuery(query);
+
+			// Create the user
+			var user = new User();
+
+			while (result.next()) {
+
+				// Set email
+				user.email = result.getString("email");
+
+				// Set id
+				user.idUser = result.getInt("idUser");
+
+				// Set name
+				user.nom = result.getString("nom");
+
+				// Set role
+				switch (result.getString("role")) {
+				case "admin":
+					user.role = Role.admin;
+					break;
+				case "client":
+					user.role = Role.client;
+					break;
+				default:
+					user.role = Role.client;
+					throw new Exception("the user role that has been provided does not exist");
+				}
+
+				// Set password
+				user.motDePass = result.getString("motDePass");
+
+				// Return the user
+				return user;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// If we got here there was a problem, return null
+		return null;
 	}
 
 	// Gets all the commandes from the database
@@ -287,8 +343,8 @@ public class DBManager {
 			// Create the statement
 			var statement = connection.createStatement();
 
-			// Execute the query and get the result
-			var result = statement.executeUpdate(query);
+			// Execute the query
+			statement.executeUpdate(query);
 
 			// If we got here there was no problem, return an empty string
 			return "";
@@ -359,6 +415,180 @@ public class DBManager {
 
 		// If we got here there was a problem, return an empty list
 		return new ArrayList<Medicament>();
+	}
+
+	// Adds a new medicament to the database, returns an error if not successful,
+	// returns
+	// an empty string if successful
+	public static String AddMedicament(Medicament medicament) {
+		try {
+			// Create connection
+			Class.forName(Driver);
+			Connection connection = DriverManager.getConnection(Url, Username, DBPassword);
+
+			// If we have no medicament
+			if (medicament == null)
+				// Return error message
+				return "medicament must not be null";
+
+			// If the medicament has no name
+			if (medicament.nom == null)
+				// Return error message
+				return "must give a valid name";
+
+			// If the medicament has an empty name
+			if (medicament.nom.isBlank())
+				// Return error message
+				return "must give a valid name";
+
+			// If the medicament has no commentPrendre
+			if (medicament.commentPrendre == null)
+				// Return error message
+				return "must give a valid comment prendre";
+
+			// If the medicament has an empty commentPrendre
+			if (medicament.commentPrendre.isBlank())
+				// Return error message
+				return "must give a valid comment prendre";
+
+			// If the medicament has no expiration date
+			if (medicament.dateExpiration == null)
+				// Return error message
+				return "must give a valid expiration date";
+
+			// If the medicament has no fabrication date
+			if (medicament.dateFabrication == null)
+				// Return error message
+				return "must give a valid fabrication date";
+
+			// If expiration date is before fabrication date
+			if(medicament.dateExpiration.before(medicament.dateFabrication))
+				// Return error message
+				return "expiration date must be greater than fabrication date";
+			
+			// If the medicament has no price
+			if (medicament.prix == 0)
+				// Return error message
+				return "must give a valid price";
+
+			// If we got here we are sure that we have all required data
+
+			// Create the query to execute
+			var query = "";
+
+			// Check if we will add this user with a given id
+			if (medicament.idMedicament == 0)
+				// We add a medicament without using a specific id
+				query = "insert into medicaments ( nom, dateFabrication, dateExpiration, constituant, commentPrendre, prix)"
+						+ " values('" + medicament.nom + "','" +  new java.sql.Date(medicament.dateFabrication.getTime()) + "', '"
+						+ new java.sql.Date(medicament.dateExpiration.getTime()) + "','" + medicament.constituant + "' , '"
+						+ medicament.commentPrendre + "'," + medicament.prix + ");";
+			else {
+				// We add a medicament using a specific id
+				query = "insert into medicaments (idMedicament, nom, dateFabrication, dateExpiration, constituant, commentPrendre, prix)"
+						+ " values(" + medicament.idMedicament + ",'" + medicament.nom + "','"
+						+ medicament.dateFabrication + "', '" + medicament.dateExpiration + "','"
+						+ medicament.constituant + "' , '" + medicament.commentPrendre + "'," + medicament.prix + ");";
+
+			}
+			// Create the statement
+			var statement = connection.createStatement();
+
+			// Execute the query
+			statement.executeUpdate(query);
+
+			// If we got here there was no problem, return an empty string
+			return "";
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// If we got here there was an unknown error
+		return "unknown error occured";
+	}
+
+	// Deletes a medicament with the given id from the database
+	public static void DeleteMedicamentById(int id) {
+		try {
+			// Create connection
+			Class.forName(Driver);
+			Connection connection = DriverManager.getConnection(Url, Username, DBPassword);
+
+			// Create query
+			var query = "delete from medicaments where idMedicament=" + id;
+
+			// Create the statement
+			var statement = connection.createStatement();
+
+			// Execute the query
+			statement.executeUpdate(query);
+
+			// If we got here there was no problem, return an empty string
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	// Changes the information of the medicament that's passed in in the databae, only changes info
+	// that is not null or blank
+	public static void ModifyMedicament(Medicament medicament) {
+
+		try {
+			// Create connection
+			Class.forName(Driver);
+			Connection connection = DriverManager.getConnection(Url, Username, DBPassword);
+
+			// Create query
+			var query = "update medicaments set";
+
+			// If we have a name
+			if (medicament.nom != null && !medicament.nom.isBlank())
+				// Change it
+				query += " nom = '" + medicament.nom + "',";
+
+			// If we have a constituant
+			if (medicament.constituant != null && !medicament.constituant.isBlank())
+				// Change it
+				query += " constituant = '" + medicament.constituant + "',";
+
+			// If we have how to take
+			if (medicament.commentPrendre != null && !medicament.commentPrendre.isBlank())
+				// Change it
+				query += " commentPrendre = '" + medicament.commentPrendre + "',";
+
+			// If we have a price
+			if (medicament.prix != 0)
+				// Change it
+				query += " prix = '" + medicament.prix + "',";
+
+			// If we have a date of creation
+			if (medicament.dateFabrication != null)
+				// Change it
+				query += " dateFabrication = '" +  new java.sql.Date(medicament.dateFabrication.getTime()) + "',";
+
+			// If we have a date of expiration
+			if (medicament.dateExpiration != null)
+				// Change it
+				query += " dateExpiration = '" + new java.sql.Date(medicament.dateExpiration.getTime())+ "',";
+
+			// Remove last ","
+			query = query.substring(0,query.length()-1);
+			
+			// Finish the query
+			query += " where idMedicament =" + medicament.idMedicament;
+			
+			// Create the statement
+			var statement = connection.createStatement();
+
+			// Execute the query
+			statement.executeUpdate(query);
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 }
